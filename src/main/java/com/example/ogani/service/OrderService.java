@@ -12,4 +12,8 @@ public interface OrderService {
     List<Order> getList();
     
     List<Order> getOrderByUser(String username);
+    
+    Order getOrderById(Long id);
+    
+    Order updateOrderPaymentStatus(Long id, String status, String paymentMethod);
 }

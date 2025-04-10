@@ -51,7 +51,7 @@ public class OrderServiceImpl implements OrderService {
             orderDetail.setName(rq.getName());
             orderDetail.setPrice(rq.getPrice());
             orderDetail.setQuantity(rq.getQuantity());
-            orderDetail.setSubTotal(rq.getPrice()* rq.getQuantity());
+            orderDetail.setSubTotal(rq.getPrice() * rq.getQuantity());
             orderDetail.setOrder(order);
             totalPrice += orderDetail.getSubTotal();
             orderDetailRepository.save(orderDetail);
@@ -59,6 +59,12 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setTotalPrice(totalPrice);
         order.setUser(user);
+        
+        // Set payment method from request or default to COD
+        if (request.getPaymentMethod() != null && !request.getPaymentMethod().isEmpty()) {
+            order.setPaymentMethod(request.getPaymentMethod());
+        }
+        
         orderRepository.save(order);
     }
 
@@ -75,4 +81,17 @@ public class OrderServiceImpl implements OrderService {
         return orders;  
     }
 
+    @Override
+    public Order getOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Order not found with ID: " + id));
+    }
+
+    @Override
+    public Order updateOrderPaymentStatus(Long id, String status, String paymentMethod) {
+        Order order = getOrderById(id);
+        order.setPaymentStatus(status);
+        order.setPaymentMethod(paymentMethod);
+        return orderRepository.save(order);
+    }
 }

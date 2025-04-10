@@ -52,4 +52,21 @@ public class OrderController {
 
         return ResponseEntity.ok(new MessageResponse("Order Placed Successfully!"));
     }
+    
+    @GetMapping("/{id}")
+    @Operation(summary="Lấy thông tin đơn hàng theo ID")
+    public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
+        Order order = orderService.getOrderById(id);
+        return ResponseEntity.ok(order);
+    }
+    
+    @PostMapping("/{id}/update-payment")
+    @Operation(summary="Cập nhật trạng thái thanh toán")
+    public ResponseEntity<Order> updatePaymentStatus(
+            @PathVariable Long id,
+            @RequestParam("status") String status,
+            @RequestParam("paymentMethod") String paymentMethod) {
+        Order order = orderService.updateOrderPaymentStatus(id, status, paymentMethod);
+        return ResponseEntity.ok(order);
+    }
 }

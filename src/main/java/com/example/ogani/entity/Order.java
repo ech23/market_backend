@@ -50,6 +50,10 @@ public class Order {
 
     private long totalPrice;
 
+    private String paymentStatus = "PENDING"; // PENDING, PAID, CANCELLED
+    
+    private String paymentMethod = "COD"; // COD, VNPAY
+
     @ManyToOne
     @JoinColumn(name="user_id")
     private User user;
