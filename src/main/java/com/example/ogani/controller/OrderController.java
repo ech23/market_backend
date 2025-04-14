@@ -48,14 +48,13 @@ public class OrderController {
     @Operation(summary="Đặt hàng sản phẩm")
     public ResponseEntity<?> placeOrder(@RequestBody CreateOrderRequest request){
 
-        orderService.placeOrder(request);
-
-        return ResponseEntity.ok(new MessageResponse("Order Placed Successfully!"));
+        Order order = orderService.placeOrder(request);
+        return ResponseEntity.ok(order);
     }
     
     @GetMapping("/{id}")
     @Operation(summary="Lấy thông tin đơn hàng theo ID")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
+    public ResponseEntity<Order> getOrderById(@PathVariable String id) {
         Order order = orderService.getOrderById(id);
         return ResponseEntity.ok(order);
     }
@@ -63,7 +62,7 @@ public class OrderController {
     @PostMapping("/{id}/update-payment")
     @Operation(summary="Cập nhật trạng thái thanh toán")
     public ResponseEntity<Order> updatePaymentStatus(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam("status") String status,
             @RequestParam("paymentMethod") String paymentMethod) {
         Order order = orderService.updateOrderPaymentStatus(id, status, paymentMethod);

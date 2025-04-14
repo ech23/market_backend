@@ -143,7 +143,7 @@ public class VNPayServiceImpl implements VNPayService {
         VNPayTransaction transaction = new VNPayTransaction();
         transaction.setVnpTxnRef(vnpayResponse.get("vnp_TxnRef"));
         transaction.setVnpOrderInfo(vnpayResponse.get("vnp_OrderInfo"));
-        transaction.setAmount(Long.parseLong(vnpayResponse.get("vnp_Amount")) / 100);
+        transaction.setAmount(Long.parseLong(vnpayResponse.get("vnp_Amount")));
         transaction.setBankCode(vnpayResponse.get("vnp_BankCode"));
         transaction.setCardType(vnpayResponse.get("vnp_CardType"));
         transaction.setPaymentTime(LocalDateTime.now());

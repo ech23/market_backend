@@ -30,7 +30,7 @@ public class Blog {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private String id;
 
     private String title;
 

@@ -7,13 +7,13 @@ import com.example.ogani.model.request.CreateOrderRequest;
 
 public interface OrderService {
     
-    void placeOrder(CreateOrderRequest request);
+    Order placeOrder(CreateOrderRequest request);
 
     List<Order> getList();
     
     List<Order> getOrderByUser(String username);
     
-    Order getOrderById(Long id);
+    Order getOrderById(String id);
     
-    Order updateOrderPaymentStatus(Long id, String status, String paymentMethod);
+    Order updateOrderPaymentStatus(String id, String status, String paymentMethod);
 }

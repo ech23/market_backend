@@ -1,14 +1,9 @@
 package com.example.ogani.controller;
 
+import com.example.ogani.entity.Blog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.ogani.entity.User;
 import com.example.ogani.model.request.ChangePasswordRequest;
@@ -17,6 +12,8 @@ import com.example.ogani.model.response.MessageResponse;
 import com.example.ogani.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
@@ -27,13 +24,25 @@ public class UserController {
     private UserService userService;
     
 
+//    @GetMapping("/")
+//    @Operation(summary="Lấy ra user bằng username")
+//    public ResponseEntity<User> getuser(@RequestParam("username") String username){
+//        User user = userService.getUserByUsername(username);
+//        return ResponseEntity.ok(user);
+//    }
     @GetMapping("/")
-    @Operation(summary="Lấy ra user bằng username")
-    public ResponseEntity<User> getuser(@RequestParam("username") String username){
-        User user = userService.getUserByUsername(username);
-        return ResponseEntity.ok(user);
-    }
+    @Operation(summary="Lấy tất cả danh sách user")
+    public ResponseEntity<List<User>> getList(){
+        List<User> list = userService.getList();
 
+        return ResponseEntity.ok(list);
+
+    }
+    @DeleteMapping("delete/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable long id){
+        userService.deleteUser(id);
+        return ResponseEntity.ok(new MessageResponse("Delete uccess"));
+    }
     @PutMapping("/update")
     @Operation(summary="Cập nhật user")
     public ResponseEntity<User> updateProfile(@RequestBody UpdateProfileRequest request){
