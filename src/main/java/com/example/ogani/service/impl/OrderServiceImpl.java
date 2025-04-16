@@ -30,10 +30,11 @@ public class OrderServiceImpl implements OrderService {
     private UserRepository userRepository;
 
     @Override
-    public void placeOrder(CreateOrderRequest request) {
-        // TODO Auto-generated method stub
+    public Order placeOrder(CreateOrderRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new NotFoundException("Not Found User With Username:" + request.getUsername()));
+
         Order order = new Order();
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new NotFoundException("Not Found User With Username:" + request.getUsername()));
         order.setFirstname(request.getFirstname());
         order.setLastname(request.getLastname());
         order.setCountry(request.getCountry());
@@ -43,23 +44,30 @@ public class OrderServiceImpl implements OrderService {
         order.setPostCode(request.getPostCode());
         order.setEmail(request.getEmail());
         order.setPhone(request.getPhone());
-        order.setNote(request.getNote());   
-        orderRepository.save(order);
+        order.setNote(request.getNote());
+
         long totalPrice = 0;
-        for(CreateOrderDetailRequest rq: request.getOrderDetails()){
+        order = orderRepository.save(order);  // Save lần 1 để có ID cho OrderDetail
+
+        for (CreateOrderDetailRequest rq : request.getOrderDetails()) {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setName(rq.getName());
             orderDetail.setPrice(rq.getPrice());
             orderDetail.setQuantity(rq.getQuantity());
-            orderDetail.setSubTotal(rq.getPrice()* rq.getQuantity());
+            orderDetail.setSubTotal(rq.getPrice() * rq.getQuantity());
             orderDetail.setOrder(order);
             totalPrice += orderDetail.getSubTotal();
             orderDetailRepository.save(orderDetail);
-            
         }
+
         order.setTotalPrice(totalPrice);
         order.setUser(user);
-        orderRepository.save(order);
+
+        if (request.getPaymentMethod() != null && !request.getPaymentMethod().isEmpty()) {
+            order.setPaymentMethod(request.getPaymentMethod());
+        }
+
+        return orderRepository.save(order);  // Save lần 2 cập nhật totalPrice và user
     }
 
     @Override
@@ -75,4 +83,17 @@ public class OrderServiceImpl implements OrderService {
         return orders;  
     }
 
+    @Override
+    public Order getOrderById(String id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Order not found with ID: " + id));
+    }
+
+    @Override
+    public Order updateOrderPaymentStatus(String id, String status, String paymentMethod) {
+        Order order = getOrderById(id);
+        order.setPaymentStatus(status);
+        order.setPaymentMethod(paymentMethod);
+        return orderRepository.save(order);
+    }
 }

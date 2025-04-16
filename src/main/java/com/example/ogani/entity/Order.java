@@ -26,7 +26,7 @@ public class Order {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private String id;
 
     private String firstname;
 
@@ -49,6 +49,10 @@ public class Order {
     private String note;
 
     private long totalPrice;
+
+    private String paymentStatus = "PENDING"; // PENDING, PAID, CANCELLED
+    
+    private String paymentMethod = "COD"; // COD, VNPAY
 
     @ManyToOne
     @JoinColumn(name="user_id")

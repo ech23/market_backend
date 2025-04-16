@@ -1,6 +1,7 @@
 package com.example.ogani.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,5 +13,6 @@ import com.example.ogani.entity.Order;
 public interface OrderRepository extends JpaRepository<Order,Long> {
     
     @Query(value ="Select * from Orders where user_id = :id order by id desc",nativeQuery = true)
-    List<Order> getOrderByUser(long id);
+    List<Order> getOrderByUser(String id);
+    Optional<Order> findById(String id);
 }

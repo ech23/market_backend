@@ -64,4 +64,5 @@ public class CreateOrderRequest {
 
     private List<CreateOrderDetailRequest> orderDetails;
     
+    private String paymentMethod = "COD"; // Default to COD, can be VNPAY
 }

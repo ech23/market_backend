@@ -1,10 +1,12 @@
 package com.example.ogani.service.impl;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -79,7 +81,14 @@ public class UserServiceImpl implements UserService {
       User user = userRepository.findByUsername(username).orElseThrow(() -> new NotFoundException("Not Found User"));
       return user;
     }
+    public List<User> getList(){
+        return userRepository.findAll(Sort.by("id").descending());
 
+    }
+    public void deleteUser(long id){
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("Not Found User"));
+        userRepository.delete(user);
+    }
     @Override
     public User updateUser(UpdateProfileRequest request) {
       // TODO Auto-generated method stub
