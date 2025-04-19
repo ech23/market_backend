@@ -29,4 +29,7 @@ public class CreateOrderDetailRequest {
     private int quantity;
 
     private long subTotal;
+    
+    @NotNull(message = "ID sản phẩm không được để trống")
+    private Long productId;
 }

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String id;
+    private long id;
 
     private String name;
 
