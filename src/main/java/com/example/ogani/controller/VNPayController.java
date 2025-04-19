@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/vnpay")
@@ -23,7 +24,8 @@ public class VNPayController {
     private OrderService orderService;
 
     @PostMapping("/create-payment/{orderId}")
-    public ResponseEntity<?> createPaymentUrl(@PathVariable String orderId, HttpServletRequest request) {
+    public ResponseEntity<?> createPaymentUrl(@PathVariable long orderId, HttpServletRequest request) {
+
         Order order = orderService.getOrderById(orderId);
         if (order == null) {
             return ResponseEntity.badRequest().body("Order not found");
@@ -45,7 +47,7 @@ public class VNPayController {
         if ("success".equals(response.get("status"))) {
             String vnpOrderInfo = queryParams.get("vnp_OrderInfo");
             String orderId = vnpOrderInfo.substring(vnpOrderInfo.lastIndexOf(": ") + 2);
-            Order order = orderService.getOrderById(orderId);
+            Order order = orderService.getOrderById(Long.parseLong(orderId));
             
             if (order != null) {
                 // Save VNPay transaction
@@ -68,7 +70,7 @@ public class VNPayController {
     }
     
     @GetMapping("/payment-status/{orderId}")
-    public ResponseEntity<?> getPaymentStatus(@PathVariable String orderId) {
+    public ResponseEntity<?> getPaymentStatus(@PathVariable long orderId) {
         Order order = orderService.getOrderById(orderId);
         if (order == null) {
             return ResponseEntity.badRequest().body("Order not found");

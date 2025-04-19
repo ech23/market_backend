@@ -13,7 +13,7 @@ public interface OrderService {
     
     List<Order> getOrderByUser(String username);
     
-    Order getOrderById(String id);
+    Order getOrderById(long id);
     
-    Order updateOrderPaymentStatus(String id, String status, String paymentMethod);
+    Order updateOrderPaymentStatus(long id, String status, String paymentMethod);
 }
