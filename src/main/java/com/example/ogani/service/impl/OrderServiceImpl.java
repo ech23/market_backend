@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ogani.entity.Order;
 import com.example.ogani.entity.OrderDetail;
+import com.example.ogani.entity.OrderStatus;
 import com.example.ogani.entity.Product;
 import com.example.ogani.entity.User;
 import com.example.ogani.exception.InsufficientStockException;
@@ -87,6 +88,7 @@ public class OrderServiceImpl implements OrderService {
         order.setEmail(request.getEmail());
         order.setPhone(request.getPhone());
         order.setNote(request.getNote());
+        order.setOrderStatus(OrderStatus.PENDING);
 
         long totalPrice = 0;
         order = orderRepository.save(order);  // Save lần 1 để có ID cho OrderDetail
@@ -137,10 +139,29 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<Order> getOrdersByStatus(OrderStatus status) {
+        return orderRepository.findByOrderStatus(status);
+    }
+    
+    @Override
+    public List<Order> getOrdersByStatusAndUser(OrderStatus status, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Not Found User With Username:" + username));
+        return orderRepository.findByOrderStatusAndUser_Id(status, user.getId());
+    }
+
+    @Override
     public Order updateOrderPaymentStatus(long id, String status, String paymentMethod) {
         Order order = getOrderById(id);
         order.setPaymentStatus(status);
         order.setPaymentMethod(paymentMethod);
+        return orderRepository.save(order);
+    }
+
+    @Override
+    public Order updateOrderStatus(long id, OrderStatus status){
+        Order order = getOrderById(id);
+        order.setOrderStatus(status);
         return orderRepository.save(order);
     }
 }

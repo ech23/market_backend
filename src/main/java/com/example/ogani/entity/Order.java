@@ -50,7 +50,9 @@ public class Order {
 
     private long totalPrice;
 
-    private String paymentStatus = "PENDING"; // PENDING, PAID, CANCELLED
+    private String paymentStatus = "PENDING";
+
+    private OrderStatus orderStatus = OrderStatus.PENDING;
     
     private String paymentMethod = "COD"; // COD, VNPAY
 

@@ -3,7 +3,10 @@ package com.example.ogani.service.impl;
 import com.example.ogani.config.VNPayConfig;
 import com.example.ogani.entity.Order;
 import com.example.ogani.entity.VNPayTransaction;
+import com.example.ogani.exception.NotFoundException;
+import com.example.ogani.model.payment.PaymentSession;
 import com.example.ogani.repository.VNPayTransactionRepository;
+import com.example.ogani.service.RedisService;
 import com.example.ogani.service.VNPayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -28,6 +32,9 @@ public class VNPayServiceImpl implements VNPayService {
     @Autowired
     private VNPayTransactionRepository vnPayTransactionRepository;
 
+    @Autowired
+    private RedisService redisService;
+
     @Override
     public String createPaymentUrl(Order order, String ipAddress) {
         String vnp_Version = "2.1.0";
@@ -36,14 +43,14 @@ public class VNPayServiceImpl implements VNPayService {
         String vnp_IpAddr = ipAddress;
         String vnp_TmnCode = vnPayConfig.getTmnCode();
         String orderType = "other";
-        
+
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
         vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
         vnp_Params.put("vnp_Amount", String.valueOf(order.getTotalPrice() * 100));
         vnp_Params.put("vnp_CurrCode", "VND");
-        
+
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang: " + order.getId());
         vnp_Params.put("vnp_OrderType", orderType);
@@ -64,7 +71,7 @@ public class VNPayServiceImpl implements VNPayService {
         Collections.sort(fieldNames);
         StringBuilder hashData = new StringBuilder();
         StringBuilder query = new StringBuilder();
-        
+
         Iterator<String> itr = fieldNames.iterator();
         while (itr.hasNext()) {
             String fieldName = itr.next();
@@ -78,23 +85,23 @@ public class VNPayServiceImpl implements VNPayService {
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
-                
+
                 // Build query
                 query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII));
                 query.append('=');
                 query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                
+
                 if (itr.hasNext()) {
                     query.append('&');
                     hashData.append('&');
                 }
             }
         }
-        
+
         String queryUrl = query.toString();
         String vnp_SecureHash = hmacSHA512(vnPayConfig.getHashSecret(), hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        
+
         return vnPayConfig.getUrl() + "?" + queryUrl;
     }
 
@@ -105,7 +112,7 @@ public class VNPayServiceImpl implements VNPayService {
             String vnp_SecureHash = response.get("vnp_SecureHash");
             response.remove("vnp_SecureHash");
             response.remove("vnp_SecureHashType");
-            
+
             List<String> fieldNames = new ArrayList<>(response.keySet());
             Collections.sort(fieldNames);
             StringBuilder hashData = new StringBuilder();
@@ -150,8 +157,13 @@ public class VNPayServiceImpl implements VNPayService {
         transaction.setTransactionStatus(vnpayResponse.get("vnp_TransactionStatus"));
         transaction.setSecureHash(vnpayResponse.get("vnp_SecureHash"));
         transaction.setOrder(order);
-        
+
         vnPayTransactionRepository.save(transaction);
+    }
+
+    @Override
+    public VNPayTransaction getTransactionByOrderId(String orderId) {
+        return null;
     }
 
     private String hmacSHA512(String key, String data) {
@@ -178,7 +190,7 @@ public class VNPayServiceImpl implements VNPayService {
         }
         return hexString.toString();
     }
-    
+
     private String getRandomNumber(int len) {
         Random rnd = new Random();
         String chars = "0123456789";
@@ -188,4 +200,36 @@ public class VNPayServiceImpl implements VNPayService {
         }
         return sb.toString();
     }
-} 
+
+    @Override
+    public PaymentSession createPaymentSession(Order order) {
+        // Generate unique session ID
+        String sessionId = UUID.randomUUID().toString();
+
+        // Create payment session
+        PaymentSession session = new PaymentSession();
+        session.setSessionId(sessionId);
+        session.setOrderId(order.getId());
+        session.setPaymentMethod("VNPAY");
+        session.setStatus("PENDING");
+        session.setCreatedAt(LocalDateTime.now());
+        session.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+
+        // Store order in Redis
+        redisService.storeOrderForPayment(order, sessionId);
+
+        return session;
+    }
+
+    @Override
+    public Order getOrderBySessionId(String sessionId) {
+        return redisService.getOrderByPaymentSessionId(sessionId)
+                .orElseThrow(() -> new NotFoundException("Payment session not found or expired: " + sessionId));
+    }
+
+    @Override
+    public void completePaymentSession(String sessionId, String status) {
+        // Remove order from Redis
+        redisService.removeOrder(sessionId);
+    }
+}

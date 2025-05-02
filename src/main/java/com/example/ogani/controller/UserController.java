@@ -24,20 +24,20 @@ public class UserController {
     private UserService userService;
     
 
-//    @GetMapping("/")
-//    @Operation(summary="Lấy ra user bằng username")
-//    public ResponseEntity<User> getuser(@RequestParam("username") String username){
-//        User user = userService.getUserByUsername(username);
-//        return ResponseEntity.ok(user);
-//    }
     @GetMapping("/")
-    @Operation(summary="Lấy tất cả danh sách user")
-    public ResponseEntity<List<User>> getList(){
-        List<User> list = userService.getList();
-
-        return ResponseEntity.ok(list);
-
+    @Operation(summary="Lấy ra user bằng username")
+    public ResponseEntity<User> getuser(@RequestParam("username") String username){
+        User user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
     }
+//    @GetMapping("/")
+//    @Operation(summary="Lấy tất cả danh sách user")
+//    public ResponseEntity<List<User>> getList(){
+//        List<User> list = userService.getList();
+//
+//        return ResponseEntity.ok(list);
+//
+//    }
     @DeleteMapping("delete/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable long id){
         userService.deleteUser(id);
