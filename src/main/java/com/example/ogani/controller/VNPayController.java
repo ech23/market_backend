@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vnpay")
-//@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200")
 public class VNPayController {
 
     @Autowired
@@ -43,7 +43,6 @@ public class VNPayController {
             Map<String, String> response = new HashMap<>();
             response.put("paymentUrl", vnpayUrl);
             response.put("sessionId", session.getSessionId());
-
             
             return ResponseEntity.ok(response);
         } catch (NotFoundException e) {

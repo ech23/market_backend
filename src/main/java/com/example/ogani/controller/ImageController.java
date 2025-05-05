@@ -26,7 +26,7 @@ import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/image")
-//@CrossOrigin(origins = "*",maxAge = 3600)
+@CrossOrigin(origins = "*",maxAge = 3600)
 public class ImageController {
     private static String UPLOAD_DIR  = System.getProperty("user.dir") + "/src/main/resources/static/photos/";
 
