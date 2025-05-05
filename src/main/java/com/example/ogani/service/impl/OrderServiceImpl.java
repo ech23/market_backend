@@ -1,5 +1,6 @@
 package com.example.ogani.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.ogani.entity.InventoryAdjustment;
+import com.example.ogani.entity.InventoryAdjustment.AdjustmentType;
 import com.example.ogani.entity.Order;
 import com.example.ogani.entity.OrderDetail;
 import com.example.ogani.entity.OrderStatus;
@@ -19,6 +22,7 @@ import com.example.ogani.exception.InsufficientStockException;
 import com.example.ogani.exception.NotFoundException;
 import com.example.ogani.model.request.CreateOrderDetailRequest;
 import com.example.ogani.model.request.CreateOrderRequest;
+import com.example.ogani.repository.InventoryAdjustmentRepository;
 import com.example.ogani.repository.OrderDetailRepository;
 import com.example.ogani.repository.OrderRepository;
 import com.example.ogani.repository.ProductRepository;
@@ -39,6 +43,9 @@ public class OrderServiceImpl implements OrderService {
     
     @Autowired
     private ProductRepository productRepository;
+    
+    @Autowired
+    private InventoryAdjustmentRepository inventoryAdjustmentRepository;
 
     @Override
     @Transactional
@@ -94,19 +101,37 @@ public class OrderServiceImpl implements OrderService {
         order = orderRepository.save(order);  // Save lần 1 để có ID cho OrderDetail
 
         for (CreateOrderDetailRequest rq : request.getOrderDetails()) {
+            // Get the product
+            Product product = productRepository.findById(rq.getProductId()).get();
+            
+            // Create order detail with product reference
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setName(rq.getName());
             orderDetail.setPrice(rq.getPrice());
             orderDetail.setQuantity(rq.getQuantity());
             orderDetail.setSubTotal(rq.getPrice() * rq.getQuantity());
             orderDetail.setOrder(order);
+            orderDetail.setProduct(product); // Set the product reference
             totalPrice += orderDetail.getSubTotal();
             orderDetailRepository.save(orderDetail);
             
             // Reduce product quantity
-            Product product = productRepository.findById(rq.getProductId()).get();
-            product.setQuantity(product.getQuantity() - rq.getQuantity());
+            int previousStock = product.getQuantity();
+            int newStock = previousStock - rq.getQuantity();
+            product.setQuantity(newStock);
             productRepository.save(product);
+            
+            // Track inventory adjustment
+            InventoryAdjustment adjustment = new InventoryAdjustment();
+            adjustment.setProduct(product);
+            adjustment.setQuantity(-rq.getQuantity()); // Negative quantity for reduction
+            adjustment.setPreviousStock(previousStock);
+            adjustment.setNewStock(newStock);
+            adjustment.setAdjustmentDate(LocalDateTime.now());
+            adjustment.setAdjustmentReason("Order #" + order.getId());
+            adjustment.setAdjustedBy(request.getUsername());
+            adjustment.setAdjustmentType(AdjustmentType.ORDER_PLACEMENT);
+            inventoryAdjustmentRepository.save(adjustment);
         }
 
         order.setTotalPrice(totalPrice);
@@ -159,9 +184,41 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Order updateOrderStatus(long id, OrderStatus status){
+    @Transactional
+    public Order updateOrderStatus(long id, OrderStatus status) {
         Order order = getOrderById(id);
+        OrderStatus previousStatus = order.getOrderStatus();
         order.setOrderStatus(status);
+        
+        // Handle inventory adjustments when cancelling an order
+        if (status == OrderStatus.CANCELLED && previousStatus != OrderStatus.CANCELLED) {
+            // Return items to inventory
+            for (OrderDetail detail : order.getOrderdetails()) {
+                Product product = detail.getProduct();
+                if (product != null) {
+                    int previousStock = product.getQuantity();
+                    int returnedQuantity = detail.getQuantity();
+                    int newStock = previousStock + returnedQuantity;
+                    
+                    // Update product stock
+                    product.setQuantity(newStock);
+                    productRepository.save(product);
+                    
+                    // Track inventory adjustment
+                    InventoryAdjustment adjustment = new InventoryAdjustment();
+                    adjustment.setProduct(product);
+                    adjustment.setQuantity(returnedQuantity); // Positive for return to inventory
+                    adjustment.setPreviousStock(previousStock);
+                    adjustment.setNewStock(newStock);
+                    adjustment.setAdjustmentDate(LocalDateTime.now());
+                    adjustment.setAdjustmentReason("Cancelled Order #" + order.getId());
+                    adjustment.setAdjustedBy("system");
+                    adjustment.setAdjustmentType(AdjustmentType.ORDER_CANCELLATION);
+                    inventoryAdjustmentRepository.save(adjustment);
+                }
+            }
+        }
+        
         return orderRepository.save(order);
     }
 }

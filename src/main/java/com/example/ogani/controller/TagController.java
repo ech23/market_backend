@@ -26,7 +26,7 @@ import com.example.ogani.model.request.CreateTagRequest;
 
 @RestController
 @RequestMapping("/api/tag")
-@CrossOrigin(origins = "*",maxAge = 3600)
+//@CrossOrigin(origins = "*",maxAge = 3600)
 public class TagController {
 
     @Autowired
